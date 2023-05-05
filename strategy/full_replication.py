@@ -163,9 +163,9 @@ class full_replication:
     # 单期最优化权重计算
     def optimize_portfolio_weight(self, t, n, total_stocks_num, random_seed=None):
         '''
-        t : which period
-        n : back to t-n period
-        total_stocks_num : 股票数量
+        t : 第几期
+        n : 训练期长度
+        total_stocks_num : 策略包含的股票数量
         '''
         dates = self.month_list[t:t+n]
         # dates = self.month_list[t+24:t+24+n]

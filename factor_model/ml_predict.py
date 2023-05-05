@@ -16,7 +16,17 @@ class ml_predict:
 
     @staticmethod
     def factor_selection(factor_data, ret, start_factors, predict_factor):
-        
+        """using LASSO to select useful factors from a starting factors pool
+
+        Args:
+            factor_data (dataframe): training data, X
+            ret (dataframe): traing target, y
+            start_factors (list): starting factors pool
+            predict_factor (dataframe): predict data
+
+        Returns:
+            dataframe: traing data and predict data with only selected factors
+        """
         pd.set_option('display.float_format',  '{:,.20f}'.format) 
 
         lasso = linear_model.LassoCV(
@@ -37,20 +47,32 @@ class ml_predict:
 
     @staticmethod
     def minmax_normalization(df_input):
-        return df_input.apply(lambda x: (x-x.min())/ (x.max() - x.min()) if x.max() > 10000000000 else x, axis=0)
+        return df_input.apply(lambda x: (x-x.min())/ (x.max() - x.min()), axis=0)
 
     @staticmethod
     def predict_next_periodd_ret(factor_data, predict_factor, ret, date, method):
+        """using different machine learning model to predict next period stock's return
+
+        Args:
+            factor_data (dataframe ): training data, X
+            predict_factor (dataframe): predict data
+            ret (dataframe): targeting data, y
+            date (str): date string
+            method (str): lasso, elasticnet, randomforest, adaboost, MLP, GBDT
+
+        Returns:
+            list: a list of stock quintiles
+        """
         # 初始因子
         all_factors = factor_data.columns
         # 缺失数据
         factor_data = factor_data.fillna(factor_data.mean())
         # MINMAX标准化
-        # factor_data = ml_predict.minmax_normalization(factor_data)
+        factor_data = ml_predict.minmax_normalization(factor_data)
         ret = ret.fillna(0)
         # 因子筛选
-        # factor_data, predict_factor = ml_predict.factor_selection(factor_data, ret, all_factors, predict_factor)
-        # print(predict_factor.shape)
+        factor_data, predict_factor = ml_predict.factor_selection(factor_data, ret, all_factors, predict_factor)
+        print(predict_factor.shape)
 
         if method == 'lasso':
             ml_reg = linear_model.LassoCV(

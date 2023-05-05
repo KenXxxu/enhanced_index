@@ -12,20 +12,18 @@ from multiprocessing import Pool
 
 class full_replication:
     
-    def __init__(self, start_date, end_date, freq, n, by='weight', ascending=False, 
-                 group_one="sfm_randomforest_group_one"):
+    def __init__(self, start_date, end_date, n, freq="monthly", group_one="sfm_randomforest_group_one"):
         '''README
         start_date: 开始日期
         end_date: 结束日期
         freq: 策略频率, daily, monthly
         n: 选择的股票数量
+        group_one: 筛选股票情况
         '''
         self.start_date = start_date
         self.end_date = end_date
         self.freq = freq
         self.n = n
-        self.by = by
-        self.ascending = ascending
     
         self.month_list = self.get_month_list(type='first')
         self.bond = self.bond_data()
@@ -40,7 +38,7 @@ class full_replication:
                 "/home/ubuntu/group_porject/raw_data/strategy/%s.csv" % group_one, index_col=0
             )
         self.group_five = pd.read_csv(
-                "/home/ubuntu/group_porject/raw_data/strategy/sfm_randomforest_group_five.csv", index_col=0
+                "/home/ubuntu/group_porject/raw_data/strategy/%s_group_five.csv" % group_one[0:16], index_col=0
             )
 
         
@@ -183,11 +181,6 @@ class full_replication:
                             )
         # print(stocks_data)
         stocks_weight = self.month_index_weight[self.month_index_weight['trade_date']==dates[-1]]
-
-        # # 市值或贝塔值选股
-        # limit_stocks_weight = self.get_stocks_list_limit(
-        #         stocks_weight, dates[-1], total_stocks_num, by=self.by, ascending=self.ascending
-        #     )
         
         # # 预测收益率选股
         limit_stocks_weight = self.get_stocks_in_group_one(
@@ -256,58 +249,6 @@ class full_replication:
         weights = pd.DataFrame(np.array(sol['x']), index=ret_matrix.index, columns=[dates[-1]], dtype='double')
         
         return weights
-    
-    # scipy求解最优化权重
-    def optimize_portfolio_scipy(self, t, n, total_stocks_num):
-        
-        dates = self.month_list[t+12-n:t+12]
-        index_ret = self.month_index_ret[t+12-n:t+12]
-        print('Index weight in date:', dates[-1])
-        
-        stocks_data = self.month_stocks_data[self.month_stocks_data['datetime'].isin(dates)].drop(columns=['open', 'close', 'high', 'low', 'volume'])
-        stocks_weight = self.month_index_weight[self.month_index_weight['trade_date']==dates[-1]]
-        limit_stocks_weight = self.get_stocks_list_limit(stocks_weight, dates[-1], total_stocks_num, by=self.by, ascending=self.ascending)
-        stock_list = limit_stocks_weight.index.tolist()
-        stocks_data = stocks_data[stocks_data['sec_code'].isin(stock_list)]
-        # stocks_data = stocks_data.drop_duplicates()
-        
-        ret_matrix = stocks_data.set_index(['sec_code', 'datetime']).unstack()['ret'].dropna()
-        beta_matrix = stocks_data.set_index(['sec_code', 'datetime']).unstack()['beta']
-        beta_matrix = beta_matrix[beta_matrix.index.isin(ret_matrix.index)]
-        limit_stocks_weight = limit_stocks_weight[limit_stocks_weight.index.isin(ret_matrix.index)]
-        limit_stocks_weight = limit_stocks_weight.sort_index()
-        
-        stocks_weight_list = limit_stocks_weight.weight.tolist()
-        stocks_weight_upper = [i/100*(1.5)*(500/len(stocks_weight_list)) for i in stocks_weight_list]
-        stocks_weight_boundary = [-i/100*(0.5)*(500/len(stocks_weight_list))  for i in stocks_weight_list]
-        
-        # 最优化目标函数
-        def portfolio_track_error(weight, ret_matrix=ret_matrix):
-    
-            Q = np.array(ret_matrix.dot(ret_matrix.T))
-            p = -2 * np.array(index_ret.dot(ret_matrix.T))
-            weight = np.array(weight)
-            track_error = np.dot(weight,np.dot(Q, weight.T)) - np.dot(weight, p)
-            
-            return track_error
-
-        init_weight = np.array([1/len(limit_stocks_weight)] * len(limit_stocks_weight))
-        constraints = ({'type' : 'eq', 'fun' : lambda x : np.sum(x) - 1} ,
-                       {'type' : 'eq', 'fun' : lambda x : np.dot(x, np.array(ret_matrix[dates[-1]])) - index_ret[-1]},
-                       {'type' : 'ineq', 'fun': lambda x: -np.dot(x, np.array(beta_matrix[dates[-1]].tolist()) - self.indexBeta.loc[dates[-1]].beta)})
-        bounds = tuple((float(stocks_weight_boundary[x]), float(stocks_weight_upper[x])) for x in range(len(limit_stocks_weight)))
-        
-        optimal_portfolio = optimize.minimize(portfolio_track_error,
-                                      init_weight,
-                                      method = 'SLSQP',
-                                      bounds = bounds,
-                                      constraints = constraints,
-                                      options={'maxiter' : 300, 'ftol' : 1e-04})
-        
-        scipy_weights = pd.DataFrame(optimal_portfolio['x'], index=ret_matrix.index, columns=[dates[-1]], dtype='double')
-        
-        return scipy_weights
-        
     
     # 股票数量限制
     def get_stocks_list_limit(self, df_weight, date, n, by, ascending=False):
