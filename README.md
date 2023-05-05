@@ -1,4 +1,4 @@
 # enhanced_index
 
-SUSTECH，2023，Master of Fin.
+Master of Fin, SUSTECH, 2023.
 Research on index enhancement Strategy based on portfolio optimization
