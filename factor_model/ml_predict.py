@@ -9,6 +9,7 @@ from sklearn.feature_selection import SelectFromModel
 from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, GradientBoostingRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import TimeSeriesSplit
 # from jqdatasdk import *
 
 
@@ -33,7 +34,7 @@ class ml_predict:
                     eps=0.001, 
                     n_alphas=100, 
                     alphas=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], 
-                    cv=5
+                    cv=TimeSeriesSplit
                 )
         lasso.fit(factor_data, ret)
         coef_df = pd.DataFrame(lasso.coef_, index=start_factors, columns=["coef"])
@@ -79,7 +80,7 @@ class ml_predict:
                     eps=0.001, 
                     n_alphas=100, 
                     alphas=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], 
-                    cv=5
+                    cv=TimeSeriesSplit
                 )
             ml_reg.fit(factor_data, ret)
         elif method == 'elasticnet':
@@ -88,7 +89,7 @@ class ml_predict:
                     eps=0.001, 
                     n_alphas=100, 
                     alphas=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], 
-                    cv=5
+                    cv=TimeSeriesSplit
                 )
             ml_reg.fit(factor_data, ret)
         elif method == 'randomforest':
