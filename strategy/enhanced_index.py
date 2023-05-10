@@ -10,7 +10,7 @@ import scipy.optimize as optimize
 from multiprocessing import Pool
 
 
-class full_replication:
+class enhanced_index:
     
     def __init__(self, start_date, end_date, n, freq="monthly", group_one="sfm_randomforest_group_one"):
         '''README
@@ -349,7 +349,7 @@ class full_replication:
 
 
 def run_single_strategy(i):
-    track_strategy = full_replication('2012-01-01', '2022-01-01', freq='monthly', n=100, by='weight', ascending=False, group_one=i)
+    track_strategy = enhanced_index('2012-01-01', '2022-01-01', freq='monthly', n=100, by='weight', ascending=False, group_one=i)
     track_strategy.cal_strategy_weight(109, 12, ('%s' % (i)), random_seed=None)
 
 
@@ -366,7 +366,7 @@ if __name__ == '__main__':
                                     ])
     pool_.close()
     pool_.join()
-    # track_strategy = full_replication('2012-01-01', '2022-01-01', freq='monthly', n=100, by='weight', ascending=False)
+    # track_strategy = enhanced_index('2012-01-01', '2022-01-01', freq='monthly', n=100, by='weight', ascending=False)
     # track_strategy.cal_strategy_weight(109, 9, 'monthly_test_100', random_seed=None)
     t1 = time.time()
     print("总耗时为: {0}".format(t1 - t0))
