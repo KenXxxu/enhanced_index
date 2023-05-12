@@ -197,6 +197,12 @@ class full_replication:
         limit_stocks_weight = limit_stocks_weight[limit_stocks_weight.index.isin(ret_matrix.index)]
         limit_stocks_weight = limit_stocks_weight.sort_index()
         print(limit_stocks_weight)
+        # 行业权重计算
+        test = limit_stocks_weight
+        test['行业'] = test['sw_l1']
+        test = test.set_index([limit_stocks_weight.index,'sw_l1']).unstack().reset_index().set_index('sec_code')
+        industry_matrix = test['行业'].apply(lambda x : x.apply(lambda y : 0 if y is np.NaN else 1))
+        industry_weight = stocks_weight.groupby('sw_l1').sum().weight
 
         ## 参考模型预测情况
         # 函数：通过模型预测收益率情况，overweight预期收益率高的股票，underweight预期收益率低的股票
@@ -225,6 +231,9 @@ class full_replication:
         ## beta约束
         # A = matrix(np.r_[np.array([beta_matrix[dates[-1]].tolist()])])
         # b = matrix([self.indexBeta.loc[dates[-1]].beta])
+        ## 行业中性约束
+        # A = matrix(np.float64(industry_matrix.T.values))
+        # b = matrix([(industry_weight/100).tolist()])
 
         # 个股权重范围约束
         G = matrix(np.r_[np.identity(len(ret_matrix)), -np.identity(len(ret_matrix))])
